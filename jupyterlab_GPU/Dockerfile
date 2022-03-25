@@ -40,18 +40,16 @@ RUN apt-get -y install zsh wget sudo nano screen
 
 ENV JUPYTER_ENABLE_LAB=yes
 
+RUN pip3 install --upgrade jupyterlab jupyterlab-git && \
+    jupyter lab build
+
 # Defining ARG variables passed from docker-compose
 ARG UID
 ARG GID
 ARG USER
 
-RUN pip3 install --upgrade jupyterlab jupyterlab-git && \
-    jupyter lab build
-
 RUN echo ${UID}
-
 RUN echo ${GID}
-
 RUN echo ${USER}
 
 RUN addgroup --gid $GID $USER

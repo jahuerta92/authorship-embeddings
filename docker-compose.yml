@@ -32,6 +32,7 @@ services:
         user: ${UID}:${GID}
         volumes:
             - "${PWD}:/home/${USER}/work"
+            - "${PWD}/../shared_nas_data:/home/${USER}/work/data" 
         env_file:
             - .env
         ports:
