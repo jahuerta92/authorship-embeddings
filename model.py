@@ -116,7 +116,7 @@ class ContrastivePretrain(pl.LightningModule):
         anchors, _, _ = pred_batch
 
         return self(anchors.input_ids, anchors.attention_mask)
-
+        
 
 class ContrastiveLSTMHead(ContrastivePretrain):
     def __init__(self, transformer,
@@ -178,6 +178,7 @@ class ContrastiveDenseHead(ContrastivePretrain):
         self.pooler = torch.nn.Linear(embed_size, embed_size)
         self.temperature = torch.nn.Parameter(torch.Tensor([.07]))
 
+class ContrastiveMeanDenseHead(ContrastiveDenseHead):
     def forward(self, input_ids, attention_mask=None):
         with torch.no_grad():
             embeds = self.transformer(
@@ -188,6 +189,16 @@ class ContrastiveDenseHead(ContrastivePretrain):
             else:
                 embed = (embeds*attention_mask.unqueeze(-1)).sum(1) / \
                     attention_mask.sum(1).unsqueeze(-1)
+
+        return F.normalize(self.pooler(embed))
+
+class ContrastiveMaxDenseHead(ContrastiveDenseHead):
+    def forward(self, input_ids, attention_mask=None):
+        with torch.no_grad():
+            embeds = self.transformer(
+                input_ids, attention_mask).last_hidden_state
+
+            embed = embeds.max(1)
 
         return F.normalize(self.pooler(embed))
 

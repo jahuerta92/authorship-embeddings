@@ -9,8 +9,8 @@ def join_text(list_text):
 class ContrastDataset(Dataset):
     def __init__(self, text_data, steps):
         self.text_data = text_data
-        self.authors = text_data.author.unique().tolist()
-        self.text_data = self.text_data.set_index(['author', 'chunk_id'])
+        self.authors = text_data.id.unique().tolist()
+        self.text_data = self.text_data.set_index(['id', 'unique_id'])
         self.steps = steps
 
     def __len__(self):
@@ -19,7 +19,7 @@ class ContrastDataset(Dataset):
     def __getitem__(self, i):
         n_auth = len(self.authors)
         auth = self.authors[i%n_auth]
-        anchor, replica = self.text_data.loc[auth].sample(2).chunk.tolist()
+        anchor, replica = self.text_data.loc[auth].sample(2).text.tolist()
         
         return anchor, replica
     
@@ -38,7 +38,11 @@ class TextCollator:
         encoded_anchors = self.tokenizer(list(anchors), **config)
         encoded_replicas = self.tokenizer(list(replicas), **config)
 
-        return encoded_anchors.input_ids, encoded_anchors.attention_mask, encoded_replicas.input_ids, encoded_replicas.attention_mask
+        return (encoded_anchors.input_ids,
+                encoded_anchors.attention_mask,
+                encoded_replicas.input_ids,
+                encoded_replicas.attention_mask,
+                )
     
     
 def build_dataset(dataframe, tokenizer, steps, max_len=128, shuffle=False, batch_size=16, num_workers=4, prefetch_factor=4, samples_per_line=1):
