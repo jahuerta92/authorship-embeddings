@@ -1,3 +1,6 @@
 .env
 data/
 local_data/
+model/
+wandb/
+*.pyc
