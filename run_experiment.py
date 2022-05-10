@@ -64,9 +64,9 @@ VALID_BATCH_SIZE = 100
 VALID_STEPS = 5000
 CHUNK_SIZE = 512
 
-LEARNING_RATE = 5e-5
+LEARNING_RATE = 5e-3
 WEIGHT_DECAY = .01
-TRAINING_STEPS = 10000
+TRAINING_STEPS = 25000
 WARMPU_STEPS = int(TRAINING_STEPS*.1)
 
 ###############################################################################
@@ -85,9 +85,6 @@ def main():
         train_file['unique_id'] = train_file.index.astype(str) + f'_{file_code}'
         test_file['unique_id'] = test_file.index.astype(str) + f'_{file_code}'
 
-        train_file.pretokenized_text = train_file.pretokenized_text.progress_apply(literal_eval)
-        test_file.pretokenized_text = test_file.pretokenized_text.progress_apply(literal_eval)
-
         train_datasets.append(train_file[['unique_id', 'id', 'pretokenized_text', 'decoded_text']].sample(frac=1))
         test_datasets.append(test_file[['unique_id', 'id', 'pretokenized_text', 'decoded_text']].sample(frac=1))
     
@@ -105,8 +102,8 @@ def main():
     test_data = build_dataset(test, 
                               steps=VALID_STEPS, 
                               batch_size=VALID_BATCH_SIZE, 
-                              num_workers=2, 
-                              prefetch_factor=2, 
+                              num_workers=8, 
+                              prefetch_factor=8, 
                               max_len=CHUNK_SIZE)
 
     # Name model

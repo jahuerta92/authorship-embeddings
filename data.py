@@ -31,7 +31,7 @@ class PretokenizedContrastDataset(ContrastDataset):
         auth = self.authors[i%n_auth]
         anchor, replica = self.text_data.loc[auth].sample(2).pretokenized_text.tolist()
 
-        return anchor, replica
+        return literal_eval(anchor), literal_eval(replica)
 
 class TextCollator:
     def __init__(self, tokenizer, max_len=512):
