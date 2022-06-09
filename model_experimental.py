@@ -193,6 +193,7 @@ class ContrastiveDenseTransformer(ContrastivePretrain):
                  num_warmup_steps=1000,
                  num_training_steps=10000,
                  enable_scheduler=False,
+                 minibatch_size=256,
                  **kwargs,
                  ):
         super().__init__(transformer,

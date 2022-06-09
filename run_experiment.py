@@ -59,7 +59,7 @@ if MODEL_TYPE == 'max':
 elif MODEL_TYPE == 'mean':
     MODEL = ContrastiveMeanDenseTransformer
 elif MODEL_TYPE == 'lstm':
-    MODEL = ContrastiveLSTMHead
+    MODEL = ContrastiveLSTMTransformer
 elif MODEL_TYPE == 'experimental':
     MODEL = ContrastiveTransformer
 elif MODEL_TYPE == 'experimental_lstm':
