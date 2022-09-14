@@ -77,6 +77,21 @@ class PretokenizedContrastDataset(ContrastDataset):
 
         return literal_eval(anchor), literal_eval(replica)
 
+class TextSupervisedContrastDataset(ContrastDataset):
+    def __init__(self, text_data, steps, window=512, views=16):
+        super().__init__(text_data, steps, window)
+        self.author_to_ordinal = {k: v for v, k in enumerate(self.orig_authors)}
+        self.views = views
+
+    def __getitem__(self, i):
+        auth = self.authors[i]
+        anchor = self.text_data.loc[auth].sample(self.views).decoded_text.tolist()
+        if len(anchor) == 1:
+            anchor = anchor[0]
+
+        return anchor, self.author_to_ordinal[auth]
+
+
 class TextCollator:
     def __init__(self, tokenizer, max_len=512):
         self.tokenizer = tokenizer
@@ -118,6 +133,30 @@ class PretokenizedCollator:
                 replica_ids, 
                 replica_mask)
 
+class SupervisedTextCollator:
+    def __init__(self, tokenizer, max_len=512):
+        self.tokenizer = tokenizer
+        self.max_len = max_len
+
+    def __call__(self, pretokenized_texts):
+        anchors, labels = list(zip(*pretokenized_texts))
+        
+        config = dict(padding='max_length',
+                      return_tensors='pt',
+                      truncation=True,
+                      max_length=self.max_len,)
+
+        id_list, mask_list = [], []
+        for views in anchors:
+            encoded = self.tokenizer(list(views), **config)
+            id_list.append(encoded.input_ids)
+            mask_list.append(encoded.attention_mask)
+
+        return (torch.stack(id_list, dim=0),
+                torch.stack(mask_list, dim=0),
+                torch.Tensor(labels)
+                )
+
 def build_dataset(dataframe,
                   steps,
                   tokenizer=None,
@@ -139,5 +178,25 @@ def build_dataset(dataframe,
                       shuffle=shuffle,
                       num_workers=num_workers,
                       prefetch_factor=prefetch_factor,
-                      collate_fn=collator)
-                     
+                      collate_fn=collator,
+                      drop_last=True,)
+
+def build_supervised_dataset(dataframe,
+                            steps,
+                            tokenizer=None,
+                            max_len=128,
+                            batch_size=16,
+                            views=16, 
+                            num_workers=4, 
+                            prefetch_factor=4,
+                            shuffle=True):
+    collator = SupervisedTextCollator(tokenizer, max_len=max_len)
+    dataset = TextSupervisedContrastDataset(dataframe, steps, window=batch_size, views=views)
+    
+    return DataLoader(dataset,
+                      batch_size=batch_size,
+                      shuffle=shuffle,
+                      num_workers=num_workers,
+                      prefetch_factor=prefetch_factor,
+                      collate_fn=collator,
+                      drop_last=True,)
