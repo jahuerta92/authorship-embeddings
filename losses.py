@@ -135,3 +135,25 @@ class SupConLoss(torch.nn.Module):
         loss = - mean_log_prob_pos.view(views, batch_size).mean()
 
         return loss
+
+class InfoNCELoss(torch.nn.Module):
+    def __init__(self, t_0=0.07, eps=1e-8):
+        super(InfoNCELoss, self).__init__()
+        self.temperature = torch.nn.Parameter(torch.tensor([t_0]))
+
+    def forward(self, anchors, replicas):
+        batch_size = anchors.shape[0]
+        logits = (F.normalize(anchors) @ F.normalize(replicas.T)) * torch.exp(self.temperature).clamp(max=100)
+        gt = torch.arange(0, batch_size, device=logits.device) 
+
+        loss = (F.cross_entropy(logits.T, gt).mean() +
+                F.cross_entropy(logits, gt).mean()) / 2
+
+        with torch.no_grad():
+            preds = logits.argmax(-1)
+            preds_t = logits.T.argmax(-1)
+
+            accuracy = (torch.sum(preds == gt) +
+                        torch.sum(preds_t == gt)) / (batch_size * 2)
+
+        return loss, accuracy

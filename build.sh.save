@@ -1,1 +1,0 @@
-UID=$UID GID=$GID USER=jhuertas docker-compose --env-file .env up -d --build
